@@ -506,3 +506,26 @@ namespace app_pdf_new_frameworknet.Models
         public BaseColor[] ChartColors { get { return _chartcolors; } }
     }
 }
+
+
+
+
+  //desenho como retangulo, ajustar...
+                List<double> values = new List<double>{ 55, 20, 92 };
+
+                for (int i = 0; i < 10; i++)
+                {
+                    //List<string> competencias = new List<string>() { "PORTUGUES", "MATEMATICA", "HISTORIA", "GEOGRAFIA", "QUIMICA", "FILOSOFIA", "ED FISICA", "FISICA", "BIOLOGIA" }; // grafico de disciplinas(legenda)
+                    
+                    //paramentros tem de possuir a mesma quantidade de objetos na lista.
+                    List<string> discTurmaSerie = new List<string>() { "Disciplina", "Turma", "Serie" }; // grafico de disciplinas(legenda)
+                    var chartColors = new[] { System.Drawing.Color.DarkGreen, System.Drawing.Color.DarkBlue, System.Drawing.Color.Red };
+                    var competencia = "PORTUGUES";
+                    var chart = new BarChart(values, discTurmaSerie, chartColors);
+
+                    var canvas = pdf.DirectContent;
+                    canvas.DrawBarChart(chart, 71, 500, 17, verticalgrowth: true); // chart, posX inicial, posYInicial, tamanho(largura)
+
+                }
+                
+                // desenho como circulo, ajustar...
