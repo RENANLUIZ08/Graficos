@@ -1,0 +1,508 @@
+using iTextSharp.text;
+using iTextSharp.text.pdf;
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+
+namespace app_pdf_new_frameworknet.Models
+{
+    public static class DrawingForm
+    {
+        /// <summary>
+        /// Desenho de um formato circular
+        /// </summary>
+        public static void DrawPieChart(this PdfContentByte canvas,
+                   PieChart chart,
+                   float x0,
+                   float y0,
+                   float r = 50,
+                   bool showCaption = true,
+                   iTextSharp.text.Font font = null)
+        {
+
+            if (chart.Values.Length != chart.Captions.Length)
+            {
+                return;
+            }
+
+            if (font == null)
+            {
+                font = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 8);
+            }
+
+            canvas.SetLineWidth(0f);
+
+            canvas.SetLineWidth(1f);
+            var cRadius = (float)(r + 0.5);
+            canvas.Circle(x0, y0, cRadius);
+            canvas.SetColorStroke(BaseColor.GRAY);
+            canvas.Stroke();
+
+            canvas.SetLineWidth(0f);
+            var rectX1 = x0 - r;
+            var rectY1 = y0 - r;
+
+            var xPoint = x0 + r;
+            var yPoint = y0 + r;
+
+            double startAngleDouble = 0;
+            double angle = 0;
+
+            var captionY = y0 + (chart.Values.Length - 1) * 6;
+
+            for (var counter = 0; counter < chart.Values.Length; counter++)
+            {
+                double percentage = 0;
+                if (chart.TotalValues > 0)
+                    percentage = chart.Angles[counter] * 100 / 360;
+
+                if (showCaption)
+                {
+                    //captions from here
+                    canvas.SetColorStroke(chart.ChartColors[counter]);
+                    canvas.SetColorFill(chart.ChartColors[counter]);
+                    canvas.Rectangle(x0 + r + 10, captionY, 7, 7);
+                    canvas.ClosePathFillStroke();
+
+                    var percentageCaption = string.Format("{0:N}", percentage);
+                    var text2 = new ColumnText(canvas);
+                    var phrase = new Phrase(string.Format("{0} ({1}%)", chart.Captions[counter], percentageCaption), font);
+                    text2.SetSimpleColumn(phrase, x0 + r + 20, captionY, x0 + r + 200, captionY, 0f, 0);
+                    text2.Go();
+
+                    captionY -= 12;
+                    if ((int)percentage == 0)
+                    {
+                        continue;
+                    }
+                    //end of caption
+                }
+
+                if (chart.TotalValues <= 0)
+                    continue;
+
+                double y1Double;
+                double x1Double;
+                float startAngle = 0;
+                double x2Double;
+                double y2Double;
+                float x1;
+                float y1;
+                float x2;
+                float y2;
+                if (percentage <= 50)
+                {
+                    //get coordinate on circle
+                    x1Double = x0 + r * Math.Cos(startAngleDouble * Math.PI / 180);
+                    y1Double = y0 + r * Math.Sin(startAngleDouble * Math.PI / 180);
+
+                    x1 = (float)x1Double;
+                    y1 = (float)y1Double;
+
+                    angle += chart.Angles[counter];
+                    x2Double = x0 + r * Math.Cos(angle * Math.PI / 180);
+                    y2Double = y0 + r * Math.Sin(angle * Math.PI / 180);
+
+                    x2 = (float)x2Double;
+                    y2 = (float)y2Double;
+
+                    startAngle = (float)startAngleDouble;
+
+                    //set the colors to be used
+                    canvas.SetColorStroke(chart.ChartColors[counter]);
+                    canvas.SetColorFill(chart.ChartColors[counter]);
+
+                    //draw the triangle within the circle
+                    canvas.MoveTo(x0, y0);
+                    canvas.LineTo(x1, y1);
+                    canvas.LineTo(x2, y2);
+                    canvas.LineTo(x0, y0);
+                    canvas.ClosePathFillStroke();
+                    //draw the arc
+                    canvas.Arc(rectX1, rectY1, xPoint, yPoint, startAngle, (float)chart.Angles[counter]);
+                    canvas.ClosePathFillStroke();
+                    startAngleDouble += chart.Angles[counter];
+                }
+                else
+                {
+                    //DO THE FIRST PART
+                    //get coordinate on circle
+                    x1Double = x0 + r * Math.Cos(startAngleDouble * Math.PI / 180);
+                    y1Double = y0 + r * Math.Sin(startAngleDouble * Math.PI / 180);
+                    x1 = (float)x1Double;
+                    y1 = (float)y1Double;
+
+                    angle += 180;
+                    x2Double = x0 + r * Math.Cos(angle * Math.PI / 180);
+                    y2Double = y0 + r * Math.Sin(angle * Math.PI / 180);
+                    x2 = (float)x2Double;
+                    y2 = (float)y2Double;
+
+                    startAngle = (float)startAngleDouble;
+
+                    //set the colors to be used
+                    canvas.SetColorStroke(chart.ChartColors[counter]);
+                    canvas.SetColorFill(chart.ChartColors[counter]);
+
+                    //draw the triangle within the circle
+                    canvas.MoveTo(x0, y0);
+                    canvas.LineTo(x1, y1);
+                    canvas.LineTo(x2, y2);
+                    canvas.LineTo(x0, y0);
+                    canvas.ClosePathFillStroke();
+                    //draw the arc
+                    canvas.Arc(rectX1, rectY1, xPoint, yPoint, startAngle, 180);
+                    canvas.ClosePathFillStroke();
+
+                    //DO THE SECOND PART
+                    //get coordinate on circle
+                    x1Double = x0 + r * Math.Cos((startAngleDouble + 180) * Math.PI / 180);
+                    y1Double = y0 + r * Math.Sin((startAngleDouble + 180) * Math.PI / 180);
+                    x1 = (float)x1Double;
+                    y1 = (float)y1Double;
+
+                    angle += chart.Angles[counter] - 180;
+                    x2Double = x0 + r * Math.Cos(angle * Math.PI / 180);
+                    y2Double = y0 + r * Math.Sin(angle * Math.PI / 180);
+                    x2 = (float)x2Double;
+                    y2 = (float)y2Double;
+
+                    startAngle = (float)startAngleDouble;
+
+                    //set the colors to be used
+                    canvas.SetColorStroke(chart.ChartColors[counter]);
+                    canvas.SetColorFill(chart.ChartColors[counter]);
+
+                    //draw the triangle within the circle
+                    canvas.MoveTo(x0, y0);
+                    canvas.LineTo(x1, y1);
+                    canvas.LineTo(x2, y2);
+                    canvas.LineTo(x0, y0);
+                    canvas.ClosePathFillStroke();
+                    //draw the arc
+                    canvas.Arc(rectX1, rectY1, xPoint, yPoint, startAngle + 180, (float)(chart.Angles[counter] - 180));
+                    canvas.ClosePathFillStroke();
+
+                    startAngleDouble += chart.Angles[counter];
+                }
+
+            }
+        }
+
+        /// <summary>
+        /// Desenho de um formato retangular
+        /// </summary>
+        /// <param name="canvas">Painel de desenho</param>
+        /// <param name="chart">objeto de desenho</param>
+        /// <param name="xInitial">posicao X inicial</param>
+        /// <param name="yInitial">posicao Y inicial</param>
+        /// <param name="Width">Width(opcional)</param>
+        /// <param name="showCaption">Legenda</param>
+        /// <param name="font">font(nao obrigatorio)</param>
+        public static void DrawBarChart(this PdfContentByte canvas,
+                   BarChart chart,
+                   float xInitial,
+                   float yInitial,
+                   float Width = 25,
+                   float heigth = 25,
+                   bool verticalgrowth = true,
+                   bool show = true,
+                   iTextSharp.text.Font font = null)
+        {
+
+            if (chart.Values.Count != chart.Captions.Count)
+            {
+                return;
+            }
+
+            if (font == null)
+            {
+                font = FontFactory.GetFont(FontFactory.TIMES_ROMAN, 8);
+            }
+
+            for (var counter = 0; counter < chart.Values.Count; counter++)
+            {
+                if (verticalgrowth)
+                {//crescimento vertical
+                    canvas.Rectangle(xInitial, yInitial, Width, chart.Values[counter]);
+                    canvas.SetColorFill(chart.ChartColors[counter]);
+                    canvas.Fill();
+                    if (show) { showCaptionPorcentagens((float)chart.Values[counter] + yInitial, xInitial ); }
+
+                    xInitial += Width;
+                }
+                else
+                {//crescimento horizontal
+                    canvas.Rectangle(xInitial, yInitial, chart.Values[counter], heigth);
+                    canvas.SetColorFill(chart.ChartColors[counter]);
+                    canvas.Fill();
+                    if (show) { showCaptionPorcentagens(yInitial, (float)chart.Values[counter] + xInitial); }
+
+                    yInitial += heigth;
+                }
+
+                void showCaptionPorcentagens(float top, float left)
+                {
+                    //cordX, ((int)tamGrafico + cordY), graf[i]
+                    canvas.SetColorFill(BaseColor.BLACK);
+                    canvas.Fill();
+
+                    var porcentagem = chart.Values[counter];
+                    canvas.BeginText();
+                    if (verticalgrowth)
+                    {
+                        BaseFont bf = BaseFont.CreateFont(BaseFont.HELVETICA, BaseFont.CP1252, BaseFont.NOT_EMBEDDED);
+                        canvas.SetFontAndSize(bf, 8);
+                        canvas.SetTextMatrix(porcentagem == 100 ? left : left + 0.5f, top + 2);
+                        canvas.ShowText($"{porcentagem}%");
+                        //mexer aqui
+                        canvas.SetTextMatrix(left + 0.5f, top + 2);
+                    }
+                    else
+                    {
+                        BaseFont bf = BaseFont.CreateFont(BaseFont.HELVETICA, BaseFont.CP1252, BaseFont.NOT_EMBEDDED);
+                        canvas.SetFontAndSize(bf, 12);
+                        canvas.SetTextMatrix(porcentagem == 100 ? left : left + 1, top + 5);
+                        canvas.ShowText($"{porcentagem}%");
+
+
+                    }
+
+
+                    canvas.EndText();
+                }
+
+                //void show
+            }
+        }
+
+
+    }
+    public class PieChart
+    {
+        private readonly double[] _values;
+        private double[] _angles;
+        private readonly string[] _captions;
+        private readonly int _length;
+        private readonly BaseColor[] _chartcolors;
+        private double _totalValues;
+
+        /// <summary>
+        /// Calculates angles based on the values for the chart
+        /// </summary>
+        private void CalculateAngles()
+        {
+            _angles = new double[_values.Length];
+
+            _totalValues = 0;
+            foreach (var v in _values)
+                _totalValues += v;
+
+            var counter = 0;
+            foreach (var v in _values)
+                _angles[counter++] = v * 360 / _totalValues;
+        }
+
+        /// <summary>
+        /// Expects chart values and captions for the chart
+        /// </summary>
+        /// <param name="values">chart values</param>
+        /// <param name="captions">captions (label) for the various segments in order of values</param>
+        public PieChart(double[] values, string[] captions)
+        {
+            if (values.Length != captions.Length)
+            {
+                throw (new Exception("Length of values must be equal to the length of captions of chart."));
+            }
+
+            if (values.Length > 10)
+            {
+                throw (new Exception("Pie chart does not support items more than 10."));
+            }
+
+            _length = values.Length;
+            _values = values;
+            _captions = captions;
+
+            CalculateAngles();
+
+            _chartcolors = new BaseColor[_length];
+            _chartcolors[0] = BaseColor.RED;
+            if (_length > 1) _chartcolors[1] = BaseColor.GREEN;
+            if (_length > 2) _chartcolors[2] = BaseColor.BLUE;
+            if (_length > 3) _chartcolors[3] = BaseColor.BLACK;
+            if (_length > 4) _chartcolors[4] = BaseColor.YELLOW;
+            if (_length > 5) _chartcolors[5] = BaseColor.ORANGE;
+            if (_length > 6) _chartcolors[6] = BaseColor.CYAN;
+            if (_length > 7) _chartcolors[7] = BaseColor.MAGENTA;
+            if (_length > 8) _chartcolors[8] = BaseColor.PINK;
+            if (_length > 9) _chartcolors[9] = BaseColor.LIGHT_GRAY;
+        }
+
+        /// <summary>
+        /// Expects chart values, captions and colors for the chart
+        /// </summary>
+        /// <param name="values">chart values</param>
+        /// <param name="captions">captions (label) for the various segments in order of values</param>
+        /// <param name="chartcolors">colors to be used for the charts in order of values and captions</param>
+        public PieChart(double[] values, string[] captions, Color[] chartcolors)
+        {
+            if (chartcolors == null)
+            {
+                throw (new Exception("Chart colors cannot be null."));
+            }
+
+            if (values.Length != captions.Length || values.Length != chartcolors.Length)
+            {
+                throw (new Exception("Length of values, chart colors must be equal to the length of captions of chart."));
+            }
+
+            _length = values.Length;
+            _values = values;
+            _captions = captions;
+            _chartcolors = Array.ConvertAll(chartcolors, new Converter<Color, BaseColor>(DoubleToFloat));
+
+            CalculateAngles();
+        }
+
+        /// <summary>
+        /// Expects chart values, captions and colors for the chart
+        /// </summary>
+        /// <param name="values">chart values</param>
+        /// <param name="captions">captions (label) for the various segments in order of values</param>
+        /// <param name="schartcolors">colors to be used for the charts in order of values and captions</param>
+        public PieChart(double[] values, string[] captions, BaseColor[] schartcolors)
+        {
+            if (schartcolors == null)
+            {
+                throw (new Exception("Chart colors cannot be null."));
+            }
+
+            if (values.Length != captions.Length || values.Length != schartcolors.Length)
+            {
+                throw (new Exception("Length of values, chart colors must be equal to the length of captions of chart."));
+            }
+
+            _length = values.Length;
+            _values = values;
+            _captions = captions;
+            _chartcolors = schartcolors;
+
+            CalculateAngles();
+        }
+
+        private static BaseColor DoubleToFloat(Color c)
+        {
+            return new BaseColor(c);
+        }
+
+        public double[] Values { get { return _values; } }
+        public string[] Captions { get { return _captions; } }
+        public BaseColor[] ChartColors { get { return _chartcolors; } }
+        public int Length { get { return _length; } }
+        public double TotalValues { get { return _totalValues; } }
+        public double[] Angles { get { return _angles; } }
+    }
+
+    public class BarChart
+    {
+        private readonly List<double> _values;
+        private readonly List<string> _captions;
+        private readonly string _legendaCompetencias;
+        private readonly int _length;
+        private readonly BaseColor[] _chartcolors;
+
+        /// <summary>
+        /// Expects chart values and captions for the chart
+        /// </summary>
+        /// <param name="values">chart values</param>
+        /// <param name="captions">captions (label) for the various segments in order of values</param>
+        public BarChart(List<double> values, List<string> captions)
+        {
+            if (values.Count != captions.Count)
+            {
+                throw (new Exception("O Tamanho de legendas é diferente do tamanho de gráficos"));
+            }
+
+            if (values.Count > 9)
+            {
+                throw (new Exception("Grafico de barras nao suporta mais de 10 itens."));
+            }
+
+            _length = values.Count;
+
+            _chartcolors = new BaseColor[_length];
+            _chartcolors[0] = BaseColor.RED;
+            if (_length > 1) _chartcolors[1] = BaseColor.GREEN;
+            if (_length > 2) _chartcolors[2] = BaseColor.BLUE;
+            if (_length > 3) _chartcolors[3] = BaseColor.BLACK;
+            if (_length > 4) _chartcolors[4] = BaseColor.YELLOW;
+            if (_length > 5) _chartcolors[5] = BaseColor.ORANGE;
+            if (_length > 6) _chartcolors[6] = BaseColor.CYAN;
+            if (_length > 7) _chartcolors[7] = BaseColor.MAGENTA;
+            if (_length > 8) _chartcolors[8] = BaseColor.PINK;
+            if (_length > 9) _chartcolors[9] = BaseColor.LIGHT_GRAY;
+        }
+
+        /// <summary>
+        /// Expects chart values, captions and colors for the chart
+        /// </summary>
+        /// <param name="values">chart values</param>
+        /// <param name="captions">captions (label) for the various segments in order of values</param>
+        /// <param name="chartcolors">colors to be used for the charts in order of values and captions</param>
+        public BarChart(List<double> values, List<string> captPorcentagem, Color[] chartcolors, string captLegenda = null)
+        {
+            if (chartcolors == null)
+            {
+                throw (new Exception("A Lista de cores para pintar o grafico nao pode ser nula."));
+            }
+
+            if (values.Count != captPorcentagem.Count || values.Count != chartcolors.Length)
+            {
+                throw (new Exception("O tamanho da lista de cores deve ser igual ao tamanho das legendas informadas."));
+            }
+
+            _length = values.Count;
+            _values = values;
+            _captions = captPorcentagem;
+            _chartcolors = Array.ConvertAll(chartcolors, new Converter<Color, BaseColor>(DoubleToFloat));
+
+            if (!string.IsNullOrEmpty(captLegenda))
+            { _legendaCompetencias = captLegenda; }
+        }
+
+        /// <summary>
+        /// Expects chart values, captions and colors for the chart
+        /// </summary>
+        /// <param name="values">chart values</param>
+        /// <param name="captions">captions (label) for the various segments in order of values</param>
+        /// <param name="schartcolors">colors to be used for the charts in order of values and captions</param>
+        public BarChart(List<double> values, List<string> captions, BaseColor[] schartcolors)
+        {
+            if (schartcolors == null)
+            {
+                throw (new Exception("As cores do grafico nao podem ser nulas."));
+            }
+
+            if (values.Count != captions.Count || values.Count != schartcolors.Length)
+            {
+                throw (new Exception("O tamanho da lista de cores deve ser igual ao tamanho das legendas informadas."));
+            }
+
+            _length = values.Count;
+            _values = values;
+            _captions = captions;
+            _chartcolors = schartcolors;
+
+        }
+
+        private static BaseColor DoubleToFloat(Color c)
+        {
+            return new BaseColor(c);
+        }
+
+        public List<double> Values { get { return _values; } }
+        public List<string> Captions { get { return _captions; } }
+        public BaseColor[] ChartColors { get { return _chartcolors; } }
+    }
+}
